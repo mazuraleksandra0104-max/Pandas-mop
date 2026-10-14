@@ -6,7 +6,7 @@ import random
 
 st.set_page_config(page_title="Pandas-mop | Ola & Maciek", page_icon="✨", layout="wide")
 
-DATA_FILE = "baza_sprzatania_50m2.json"
+DATA_FILE = "baza_v2.json"
 
 DEFAULT_TASKS = [
     # WEEKLY (270 min)
