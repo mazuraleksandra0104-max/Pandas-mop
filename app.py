@@ -9,7 +9,14 @@ st.set_page_config(page_title="Pandas-mop | Ola & Maciek", page_icon="✨", layo
 DATA_FILE = "baza_v2.json"
 
 DEFAULT_TASKS = [
-    # WEEKLY (270 min)
+    # DAILY (Codzienne)
+    {"id": "d1", "cat": "Daily", "room": "Kuchnia", "task": "Ogarnięcie blatów, wyspy i zlewu po całym dniu", "time": 10, "default_role": "40%", "done": False},
+    {"id": "d2", "cat": "Daily", "room": "Kuchnia", "task": "Wrzucenie naczyń do zmywarki / włączenie zmywarki", "time": 5, "default_role": "40%", "done": False},
+    {"id": "d3", "cat": "Daily", "room": "Salon", "task": "Złożenie kocy, poprawienie poduszek na kanapie i fotelu", "time": 5, "default_role": "40%", "done": False},
+    {"id": "d4", "cat": "Daily", "room": "Sypialnia", "task": "Narzucenie kołder / lekkie przewietrzenie wkładów", "time": 5, "default_role": "60%", "done": False},
+    {"id": "d5", "cat": "Daily", "room": "Przedpokój", "task": "Odstawienie butów na stojak, odwieszenie kurtek", "time": 5, "default_role": "40%", "done": False},
+
+    # WEEKLY (Cotygodniowe)
     {"id": "w1", "cat": "Weekly", "room": "Kuchnia", "task": "Ogarnięcie blatów i wyspy, mycie zlewu, zmywarka i naczynia ręczne", "time": 20, "default_role": "40%", "done": False},
     {"id": "w2", "cat": "Weekly", "room": "Kuchnia", "task": "Przetarcie frontów (zabudowa + wyspa), backsplashu, płyty, lodówki, piekarnika i okapu", "time": 15, "default_role": "60%", "done": False},
     {"id": "w3", "cat": "Weekly", "room": "Kuchnia", "task": "Wyniesienie śmieci i przetarcie szafki pod zlewem", "time": 10, "default_role": "40%", "done": False},
@@ -32,7 +39,7 @@ DEFAULT_TASKS = [
     {"id": "w20", "cat": "Weekly", "room": "Całe 50m²", "task": "Podlewanie kwiatków w domu i roślin w doniczkach na balkonie", "time": 10, "default_role": "40%", "done": False},
     {"id": "w21", "cat": "Weekly", "room": "Całe 50m²", "task": "Dezynfekcja klamek i włączników światła w całym mieszkaniu", "time": 5, "default_role": "40%", "done": False},
 
-    # MONTHLY (200 min)
+    # MONTHLY (Comiesięczne)
     {"id": "m1", "cat": "Monthly", "room": "Kuchnia", "task": "Mycie wnętrza lodówki, przegląd zapasów i przetarcie półek", "time": 20, "default_role": "60%", "done": False},
     {"id": "m2", "cat": "Monthly", "room": "Kuchnia", "task": "Czyszczenie piekarnika i okapu (filtry + parownica)", "time": 25, "default_role": "60%", "done": False},
     {"id": "m3", "cat": "Monthly", "room": "Kuchnia", "task": "Czyszczenie pralki i zmywarki (filtry, uszczelki, szuflada)", "time": 15, "default_role": "40%", "done": False},
@@ -45,7 +52,7 @@ DEFAULT_TASKS = [
     {"id": "m10", "cat": "Monthly", "room": "Całe 50m²", "task": "Przecieranie listew przypodłogowych, górnych krawędzi drzwi i szaf", "time": 15, "default_role": "40%", "done": False},
     {"id": "m11", "cat": "Monthly", "room": "Całe 50m²", "task": "Prysznic dla kwiatków i wycieranie liści z kurzu", "time": 15, "default_role": "60%", "done": False},
 
-    # OTHER (200 min)
+    # OTHER (Sezonowe)
     {"id": "o1", "cat": "Other", "room": "Łazienka", "task": "Mycie białych płytek ściennych od podłogi do sufitu parownicą + fugi", "time": 45, "default_role": "60%", "done": False},
     {"id": "o2", "cat": "Other", "room": "Całe 50m²", "task": "Mycie okien, ram i parapetów parownicą (salon, sypialnia, gabinet)", "time": 45, "default_role": "60%", "done": False},
     {"id": "o3", "cat": "Other", "room": "Kuchnia", "task": "Mycie wnętrza szafek w zabudowie i szafek w wyspie kuchennej", "time": 30, "default_role": "60%", "done": False},
@@ -53,7 +60,7 @@ DEFAULT_TASKS = [
     {"id": "o5", "cat": "Other", "room": "Sypialnia", "task": "Pranie/odświeżanie 2 kołder i 4 poduszek + przegląd 2 komód i szafy", "time": 30, "default_role": "40%", "done": False},
     {"id": "o6", "cat": "Other", "room": "Przedpokój", "task": "Sezonowa rotacja kurtek i butów, porządek w szafach w zabudowie", "time": 20, "default_role": "40%", "done": False},
 
-    # PARTY (100 min)
+    # PARTY (Przed imprezą)
     {"id": "p1", "cat": "Party", "room": "Kuchnia", "task": "Opróżnienie zlewu i zmywarki na szkło gości, polerowanie blatów wyspy, frontów i backsplashu", "time": 15, "default_role": "60%", "done": False},
     {"id": "p2", "cat": "Party", "room": "Kuchnia", "task": "Wyniesienie śmieci z szafki pod zlewem (nowe worki na imprezę)", "time": 5, "default_role": "60%", "done": False},
     {"id": "p3", "cat": "Party", "room": "Łazienka", "task": "Szyba prysznicowa, lustro, umywalka i kibelek na błysk + świeży ręcznik i papier", "time": 15, "default_role": "60%", "done": False},
@@ -76,7 +83,13 @@ def load_state():
                 p_a = loaded.get("person_a", "Ola")
                 p_b = loaded.get("person_b", "Maciek")
                 if "tasks" in loaded:
-                    tasks = loaded["tasks"]
+                    loaded_tasks = loaded["tasks"]
+                    loaded_ids = {t["id"] for t in loaded_tasks}
+                    for dt in tasks:
+                        if dt["id"] not in loaded_ids:
+                            dt["owner"] = p_a if dt.get("default_role") == "60%" else p_b
+                            loaded_tasks.append(dt)
+                    tasks = loaded_tasks
         except:
             pass
 
@@ -102,7 +115,6 @@ if "split_pct" not in state:
 p_a = state["person_a"]
 p_b = state["person_b"]
 tasks = state["tasks"]
-df = pd.DataFrame(tasks)
 
 st.title("✨ Pandas-mop: Centrum Dowodzenia 50 m²")
 
@@ -141,14 +153,18 @@ with st.sidebar:
     st.divider()
     st.header("🔍 Filtry")
     selected_owner = st.selectbox("Pokaż zadania dla:", ["Wszyscy", new_p_a, new_p_b])
-    rooms = ["Wszystkie"] + sorted(df["room"].unique().tolist()) if not df.empty else ["Wszystkie"]
+    
+    temp_df = pd.DataFrame(tasks)
+    rooms = ["Wszystkie"] + sorted(temp_df["room"].unique().tolist()) if not temp_df.empty else ["Wszystkie"]
     selected_room = st.selectbox("Pomieszczenie:", rooms)
     
     st.divider()
     st.header("🎲 Algorytmy")
     if st.button("🔀 Wylosuj podział pod wybrane %"):
-        for cat in ["Weekly", "Monthly", "Other", "Party"]:
+        for cat in ["Daily", "Weekly", "Monthly", "Other", "Party"]:
             cat_tasks = [t for t in tasks if t["cat"] == cat]
+            if not cat_tasks:
+                continue
             total = sum(t["time"] for t in cat_tasks)
             target_time_a = total * (target_pct_a / 100.0)
             
@@ -181,11 +197,13 @@ with st.sidebar:
         save_state(state)
         st.rerun()
 
-tabs = st.tabs(["📅 Cotygodniowe (Weekly)", "🗓️ Comiesięczne (Monthly)", "🧼 Sezonowe (Other)", "🎉 Przed Imprezą"])
-categories = ["Weekly", "Monthly", "Other", "Party"]
+tabs = st.tabs(["⚡ Codzienne (Daily)", "📅 Cotygodniowe (Weekly)", "🗓️ Comiesięczne (Monthly)", "🧼 Sezonowe (Other)", "🎉 Przed Imprezą"])
+categories = ["Daily", "Weekly", "Monthly", "Other", "Party"]
+cat_names = {"Daily": "Codzienne", "Weekly": "Cotygodniowe", "Monthly": "Comiesięczne", "Other": "Sezonowe", "Party": "Przed Imprezą"}
 
 for tab, cat in zip(tabs, categories):
     with tab:
+        df = pd.DataFrame(tasks)
         cat_df = df[df["cat"] == cat].copy() if not df.empty else pd.DataFrame()
         
         total_time = int(cat_df["time"].sum()) if not cat_df.empty else 0
@@ -197,9 +215,15 @@ for tab, cat in zip(tabs, categories):
         actual_pct_b = round((time_b / total_time) * 100) if total_time > 0 else 0
         pct_done = round((done_time / total_time) * 100) if total_time > 0 else 0
 
+        diff_a = actual_pct_a - target_pct_a
+        diff_b = actual_pct_b - target_pct_b
+        
+        diff_text_a = f"+{diff_a}% od celu" if diff_a > 0 else (f"{diff_a}% od celu" if diff_a < 0 else "Idealnie w cel! 🎯")
+        diff_text_b = f"+{diff_b}% od celu" if diff_b > 0 else (f"{diff_b}% od celu" if diff_b < 0 else "Idealnie w cel! 🎯")
+
         col1, col2, col3 = st.columns(3)
-        col1.metric(f"👤 {new_p_a} (Cel: {target_pct_a}%)", f"{time_a} min ({actual_pct_a}%)", f"{actual_pct_a - target_pct_a}% od celu")
-        col2.metric(f"👤 {new_p_b} (Cel: {target_pct_b}%)", f"{time_b} min ({actual_pct_b}%)", f"{actual_pct_b - target_pct_b}% od celu")
+        col1.metric(f"👤 {new_p_a} (Cel: {target_pct_a}%)", f"{time_a} min ({actual_pct_a}%)", diff_text_a)
+        col2.metric(f"👤 {new_p_b} (Cel: {target_pct_b}%)", f"{time_b} min ({actual_pct_b}%)", diff_text_b)
         col3.metric("✅ Postęp wykonania", f"{pct_done}% ({done_time}/{total_time} min)")
         
         st.progress(pct_done / 100)
@@ -214,14 +238,16 @@ for tab, cat in zip(tabs, categories):
             view_df = view_df[view_df["room"] == selected_room]
 
         if not view_df.empty:
+            view_df = view_df.reset_index(drop=True)
+            
             edited_df = st.data_editor(
                 view_df[["id", "done", "room", "task", "time", "owner"]],
                 column_config={
                     "id": None,
                     "done": st.column_config.CheckboxColumn("Zrobione?", default=False),
-                    "room": st.column_config.TextColumn("Strefa", disabled=True),
-                    "task": st.column_config.TextColumn("Zadanie", width="large"),
-                    "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=180, step=1),
+                    "room": st.column_config.TextColumn("Strefa", disabled=False),
+                    "task": st.column_config.TextColumn("Zadanie", width="large", disabled=False),
+                    "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=180, step=1, disabled=False),
                     "owner": st.column_config.SelectboxColumn("Kto robi?", options=[new_p_a, new_p_b], required=True),
                 },
                 hide_index=True,
@@ -230,17 +256,56 @@ for tab, cat in zip(tabs, categories):
             )
 
             if not edited_df.equals(view_df[["id", "done", "room", "task", "time", "owner"]]):
-                updates = edited_df.set_index("id").to_dict(orient="index")
-                for t in tasks:
-                    if t["id"] in updates:
-                        t["done"] = bool(updates[t["id"]]["done"])
-                        t["owner"] = updates[t["id"]]["owner"]
-                        t["time"] = int(updates[t["id"]]["time"])
-                        t["task"] = updates[t["id"]]["task"]
+                for index, row in edited_df.iterrows():
+                    task_id = row["id"]
+                    for t in tasks:
+                        if t["id"] == task_id:
+                            t["done"] = bool(row["done"])
+                            t["room"] = str(row["room"])
+                            t["task"] = str(row["task"])
+                            t["time"] = int(row["time"])
+                            t["owner"] = row["owner"]
                 
                 cat_tasks_now = [t for t in tasks if t["cat"] == cat]
-                if all(t["done"] for t in cat_tasks_now):
+                if all(t["done"] for t in cat_tasks_now) and len(cat_tasks_now) > 0:
                     st.balloons()
                     
                 save_state(state)
                 st.rerun()
+
+        st.divider()
+        
+        # Sekcja usuwania zadań
+        with st.expander("🗑️ Usuń zadanie z tej listy"):
+            to_delete = st.selectbox("Wybierz zadanie do skasowania:", [t["task"] for t in cat_tasks_now] if 'cat_tasks_now' in locals() and [t for t in tasks if t["cat"] == cat] else [], key=f"del_{cat}")
+            if st.button("Skasuj wybrane zadanie", key=f"btn_del_{cat}"):
+                tasks = [t for t in tasks if not (t["cat"] == cat and t["task"] == to_delete)]
+                state["tasks"] = tasks
+                save_state(state)
+                st.rerun()
+
+        # Sekcja dodawania nowego zadania
+        with st.expander(f"➕ Dodaj nowe zadanie do: {cat_names[cat]}"):
+            with st.form(key=f"add_form_{cat}"):
+                new_task_text = st.text_input("Nazwa zadania:")
+                new_task_room = st.selectbox("Pomieszczenie/Strefa:", ["Kuchnia", "Łazienka", "Sypialnia", "Gabinet", "Salon", "Przedpokój", "Balkon", "Całe 50m²"], key=f"room_{cat}")
+                new_task_time = st.number_input("Szacowany czas (min):", min_value=1, max_value=180, value=15)
+                new_task_owner = st.selectbox("Przypisane do:", [new_p_a, new_p_b], key=f"owner_{cat}")
+                
+                submitted = st.form_submit_button("Dodaj zadanie")
+                if submitted and new_task_text.strip():
+                    new_id = f"custom_{random.randint(1000, 9999)}"
+                    new_item = {
+                        "id": new_id,
+                        "cat": cat,
+                        "room": new_task_room,
+                        "task": new_task_text.strip(),
+                        "time": int(new_task_time),
+                        "owner": new_task_owner,
+                        "done": False
+                    }
+                    tasks.append(new_item)
+                    state["tasks"] = tasks
+                    save_state(state)
+                    st.success("Dodano pomyślnie!")
+                    st.rerun()
