@@ -123,7 +123,7 @@ p_a = state["person_a"]
 p_b = state["person_b"]
 tasks = state["tasks"]
 
-st.title("✨ Pandas-mop: Centrum Dowodzenia 50 m²")
+st.title("✨ Pandas-mop: Centrum Dowodzenia ✨")
 
 with st.sidebar:
     st.header("⚙️ Ustawienia Podziału")
