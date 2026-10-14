@@ -143,31 +143,4 @@ with st.sidebar:
         st.rerun()
 
     target_pct_a = st.slider(
-        f"Cel podziału dla {new_p_a} (%):",
-        min_value=0,
-        max_value=100,
-        value=int(state.get("split_pct", 60)),
-        step=5
-    )
-    
-    if target_pct_a != state["split_pct"]:
-        state["split_pct"] = target_pct_a
-        save_state(state)
-
-    target_pct_b = 100 - target_pct_a
-    st.info(f"Aktualny cel: **{new_p_a} ({target_pct_a}%)** / **{new_p_b} ({target_pct_b}%)**")
-
-    st.divider()
-    st.header("🔍 Filtry")
-    selected_owner = st.selectbox("Pokaż zadania dla:", ["Wszyscy", new_p_a, new_p_b])
-    
-    temp_df = pd.DataFrame(tasks)
-    rooms = ["Wszystkie"] + sorted(temp_df["room"].unique().tolist()) if not temp_df.empty else ["Wszystkie"]
-    selected_room = st.selectbox("Pomieszczenie:", rooms)
-    
-    st.divider()
-    st.header("🎲 Algorytmy")
-    if st.button("🔀 Wylosuj podział pod wybrane %"):
-        for cat in ["Daily", "Weekly", "Monthly", "Other", "Party", "Projects"]:
-            cat_tasks = [t for t in tasks if t["cat"] == cat]
-            if not cat
+        f"Cel podział
