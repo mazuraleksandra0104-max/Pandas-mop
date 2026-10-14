@@ -65,10 +65,31 @@ DEFAULT_TASKS = [
 ]
 
 def load_state():
+    p_a = "Ola"
+    p_b = "Maciek"
+    tasks = DEFAULT_TASKS.copy()
+    
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"person_a": "Ola", "person_b": "Maciek", "split_pct": 60, "tasks": DEFAULT_TASKS}
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                p_a = loaded.get("person_a", "Ola")
+                p_b = loaded.get("person_b", "Maciek")
+                if "tasks" in loaded:
+                    tasks = loaded["tasks"]
+        except:
+            pass
+
+    for t in tasks:
+        if "owner" not in t:
+            t["owner"] = p_a if t.get("default_role") == "60%" else p_b
+
+    return {
+        "person_a": p_a,
+        "person_b": p_b,
+        "split_pct": 60,
+        "tasks": tasks
+    }
 
 def save_state(state):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -78,25 +99,32 @@ state = load_state()
 if "split_pct" not in state:
     state["split_pct"] = 60
 
+p_a = state["person_a"]
+p_b = state["person_b"]
 tasks = state["tasks"]
 df = pd.DataFrame(tasks)
 
 st.title("✨ Pandas-mop: Centrum Dowodzenia 50 m²")
 
-# Panel boczny
 with st.sidebar:
     st.header("⚙️ Ustawienia Podziału")
     
-    p_a = st.text_input("Imię Osoby A:", value=state.get("person_a", "Ola"))
-    p_b = st.text_input("Imię Osoby B:", value=state.get("person_b", "Maciek"))
+    new_p_a = st.text_input("Imię Osoby A:", value=p_a)
+    new_p_b = st.text_input("Imię Osoby B:", value=p_b)
     
-    if p_a != state["person_a"] or p_b != state["person_b"]:
-        state["person_a"] = p_a
-        state["person_b"] = p_b
+    if new_p_a != p_a or new_p_b != p_b:
+        state["person_a"] = new_p_a
+        state["person_b"] = new_p_b
+        for t in tasks:
+            if t["owner"] == p_a:
+                t["owner"] = new_p_a
+            elif t["owner"] == p_b:
+                t["owner"] = new_p_b
         save_state(state)
+        st.rerun()
 
     target_pct_a = st.slider(
-        f"Cel podziału dla {p_a} (%):",
+        f"Cel podziału dla {new_p_a} (%):",
         min_value=0,
         max_value=100,
         value=int(state.get("split_pct", 60)),
@@ -108,12 +136,12 @@ with st.sidebar:
         save_state(state)
 
     target_pct_b = 100 - target_pct_a
-    st.info(f"Aktualny cel: **{p_a} ({target_pct_a}%)** / **{p_b} ({target_pct_b}%)**")
+    st.info(f"Aktualny cel: **{new_p_a} ({target_pct_a}%)** / **{new_p_b} ({target_pct_b}%)**")
 
     st.divider()
     st.header("🔍 Filtry")
-    selected_owner = st.selectbox("Pokaż zadania dla:", ["Wszyscy", p_a, p_b])
-    rooms = ["Wszystkie"] + sorted(df["room"].unique().tolist())
+    selected_owner = st.selectbox("Pokaż zadania dla:", ["Wszyscy", new_p_a, new_p_b])
+    rooms = ["Wszystkie"] + sorted(df["room"].unique().tolist()) if not df.empty else ["Wszystkie"]
     selected_room = st.selectbox("Pomieszczenie:", rooms)
     
     st.divider()
@@ -133,9 +161,9 @@ with st.sidebar:
                 for t in cat_tasks:
                     if curr_sum + t["time"] <= target_time_a + 4:
                         curr_sum += t["time"]
-                        assign.append((t["id"], p_a))
+                        assign.append((t["id"], new_p_a))
                     else:
-                        assign.append((t["id"], p_b))
+                        assign.append((t["id"], new_p_b))
                 if abs(curr_sum - target_time_a) < best_diff:
                     best_diff = abs(curr_sum - target_time_a)
                     best_assign = assign
@@ -158,20 +186,20 @@ categories = ["Weekly", "Monthly", "Other", "Party"]
 
 for tab, cat in zip(tabs, categories):
     with tab:
-        cat_df = df[df["cat"] == cat].copy()
+        cat_df = df[df["cat"] == cat].copy() if not df.empty else pd.DataFrame()
         
-        total_time = int(cat_df["time"].sum())
-        time_a = int(cat_df[cat_df["owner"] == p_a]["time"].sum()) if "owner" in cat_df.columns else 0
-        time_b = int(cat_df[cat_df["owner"] == p_b]["time"].sum()) if "owner" in cat_df.columns else 0
-        done_time = int(cat_df[cat_df["done"] == True]["time"].sum())
+        total_time = int(cat_df["time"].sum()) if not cat_df.empty else 0
+        time_a = int(cat_df[cat_df["owner"] == new_p_a]["time"].sum()) if not cat_df.empty and "owner" in cat_df.columns else 0
+        time_b = int(cat_df[cat_df["owner"] == new_p_b]["time"].sum()) if not cat_df.empty and "owner" in cat_df.columns else 0
+        done_time = int(cat_df[cat_df["done"] == True]["time"].sum()) if not cat_df.empty and "done" in cat_df.columns else 0
         
-        actual_pct_a = round((time_a / total_time) * 100) if total_time else 0
-        actual_pct_b = 100 - actual_pct_a if total_time else 0
-        pct_done = round((done_time / total_time) * 100) if total_time else 0
+        actual_pct_a = round((time_a / total_time) * 100) if total_time > 0 else 0
+        actual_pct_b = round((time_b / total_time) * 100) if total_time > 0 else 0
+        pct_done = round((done_time / total_time) * 100) if total_time > 0 else 0
 
         col1, col2, col3 = st.columns(3)
-        col1.metric(f"👤 {p_a} (Cel: {target_pct_a}%)", f"{time_a} min ({actual_pct_a}%)", f"{actual_pct_a - target_pct_a}% od celu")
-        col2.metric(f"👤 {p_b} (Cel: {target_pct_b}%)", f"{time_b} min ({actual_pct_b}%)", f"{actual_pct_b - target_pct_b}% od celu")
+        col1.metric(f"👤 {new_p_a} (Cel: {target_pct_a}%)", f"{time_a} min ({actual_pct_a}%)", f"{actual_pct_a - target_pct_a}% od celu")
+        col2.metric(f"👤 {new_p_b} (Cel: {target_pct_b}%)", f"{time_b} min ({actual_pct_b}%)", f"{actual_pct_b - target_pct_b}% od celu")
         col3.metric("✅ Postęp wykonania", f"{pct_done}% ({done_time}/{total_time} min)")
         
         st.progress(pct_done / 100)
@@ -179,39 +207,40 @@ for tab, cat in zip(tabs, categories):
         if pct_done == 100 and total_time > 0:
             st.success("🎉 Wszystko w tej kategorii lśni czystością!")
 
-        view_df = cat_df.copy()
-        if selected_owner != "Wszyscy":
+        view_df = cat_df.copy() if not cat_df.empty else pd.DataFrame()
+        if selected_owner != "Wszyscy" and not view_df.empty:
             view_df = view_df[view_df["owner"] == selected_owner]
-        if selected_room != "Wszystkie":
+        if selected_room != "Wszystkie" and not view_df.empty:
             view_df = view_df[view_df["room"] == selected_room]
 
-        edited_df = st.data_editor(
-            view_df[["id", "done", "room", "task", "time", "owner"]],
-            column_config={
-                "id": None,
-                "done": st.column_config.CheckboxColumn("Zrobione?", default=False),
-                "room": st.column_config.TextColumn("Strefa", disabled=True),
-                "task": st.column_config.TextColumn("Zadanie", width="large"),
-                "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=180, step=1),
-                "owner": st.column_config.SelectboxColumn("Kto robi?", options=[p_a, p_b], required=True),
-            },
-            hide_index=True,
-            use_container_width=True,
-            key=f"editor_{cat}"
-        )
+        if not view_df.empty:
+            edited_df = st.data_editor(
+                view_df[["id", "done", "room", "task", "time", "owner"]],
+                column_config={
+                    "id": None,
+                    "done": st.column_config.CheckboxColumn("Zrobione?", default=False),
+                    "room": st.column_config.TextColumn("Strefa", disabled=True),
+                    "task": st.column_config.TextColumn("Zadanie", width="large"),
+                    "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=180, step=1),
+                    "owner": st.column_config.SelectboxColumn("Kto robi?", options=[new_p_a, new_p_b], required=True),
+                },
+                hide_index=True,
+                use_container_width=True,
+                key=f"editor_{cat}"
+            )
 
-        if not edited_df.equals(view_df[["id", "done", "room", "task", "time", "owner"]]):
-            updates = edited_df.set_index("id").to_dict(orient="index")
-            for t in tasks:
-                if t["id"] in updates:
-                    t["done"] = bool(updates[t["id"]]["done"])
-                    t["owner"] = updates[t["id"]]["owner"]
-                    t["time"] = int(updates[t["id"]]["time"])
-                    t["task"] = updates[t["id"]]["task"]
-            
-            cat_tasks_now = [t for t in tasks if t["cat"] == cat]
-            if all(t["done"] for t in cat_tasks_now):
-                st.balloons()
+            if not edited_df.equals(view_df[["id", "done", "room", "task", "time", "owner"]]):
+                updates = edited_df.set_index("id").to_dict(orient="index")
+                for t in tasks:
+                    if t["id"] in updates:
+                        t["done"] = bool(updates[t["id"]]["done"])
+                        t["owner"] = updates[t["id"]]["owner"]
+                        t["time"] = int(updates[t["id"]]["time"])
+                        t["task"] = updates[t["id"]]["task"]
                 
-            save_state(state)
-            st.rerun()
+                cat_tasks_now = [t for t in tasks if t["cat"] == cat]
+                if all(t["done"] for t in cat_tasks_now):
+                    st.balloons()
+                    
+                save_state(state)
+                st.rerun()
