@@ -70,7 +70,7 @@ DEFAULT_TASKS = [
     {"id": "p7", "cat": "Party", "room": "Gabinet", "task": "Ogarnięcie 2 biurek i złożonego stołu Kallhall, koce do kosza, zaścielenie łóżka 160x200", "time": 10, "default_role": "40%", "done": False},
     {"id": "p8", "cat": "Party", "room": "Całe 50m²", "task": "Szybkie odkurzanie i odświeżenie podłóg parownicą (szczególnie strefa dzienna i łazienka)", "time": 25, "default_role": "60%", "done": False},
 
-    # PROJECTS (Projekty / Specjalne)
+    # PROJECTS (Zadania specjalne / Projekty)
     {"id": "pr1", "cat": "Projects", "room": "Sypialnia", "task": "Gruntowne sprzątanie szafy z ubraniami (selekcja, poukładanie)", "time": 90, "default_role": "60%", "done": False},
     {"id": "pr2", "cat": "Projects", "room": "Gabinet", "task": "Organizacja regału Kallax i dokumentów w szafie", "time": 60, "default_role": "40%", "done": False},
     {"id": "pr3", "cat": "Projects", "room": "Kuchnia", "task": "Mycie wszystkich szafek w zabudowie od środka", "time": 120, "default_role": "60%", "done": False}
@@ -89,9 +89,9 @@ def load_state():
                 p_b = loaded.get("person_b", "Maciek")
                 if "tasks" in loaded:
                     loaded_tasks = loaded["tasks"]
-                    loaded_ids = {t["id"] for t in loaded_tasks}
+                    loaded_map = {t["id"]: t for t in loaded_tasks}
                     for dt in tasks:
-                        if dt["id"] not in loaded_ids:
+                        if dt["id"] not in loaded_map:
                             dt["owner"] = p_a if dt.get("default_role") == "60%" else p_b
                             loaded_tasks.append(dt)
                     tasks = loaded_tasks
@@ -123,7 +123,7 @@ p_a = state["person_a"]
 p_b = state["person_b"]
 tasks = state["tasks"]
 
-st.title("✨ Pandas-mop: Centrum Dowodzenia ✨")
+st.title("✨ Pandas-mop: Centrum Dowodzenia 50 m²")
 
 with st.sidebar:
     st.header("⚙️ Ustawienia Podziału")
@@ -159,7 +159,7 @@ with st.sidebar:
 
     st.divider()
     st.header("🔍 Filtry")
-    selected_owner = st.selectbox("Pokaż zadania dla:", ["Wszyscy", new_p_a, new_p_b, "Razem"])
+    selected_owner = st.selectbox("Pokaż zadania dla:", ["Wszyscy", new_p_a, new_p_b])
     
     temp_df = pd.DataFrame(tasks)
     rooms = ["Wszystkie"] + sorted(temp_df["room"].unique().tolist()) if not temp_df.empty else ["Wszystkie"]
@@ -204,7 +204,7 @@ with st.sidebar:
         save_state(state)
         st.rerun()
 
-tabs = st.tabs(["⚡ Codzienne", "📅 Cotygodniowe", "🗓️ Comiesięczne", "🧼 Sezonowe", "🎉 Przed Imprezą", "🛠️ Projekty / Specjalne"])
+tabs = st.tabs(["⚡ Codzienne (Daily)", "📅 Cotygodniowe (Weekly)", "🗓️ Comiesięczne (Monthly)", "🧼 Sezonowe (Other)", "🎉 Przed Imprezą", "🛠️ Projekty / Specjalne"])
 categories = ["Daily", "Weekly", "Monthly", "Other", "Party", "Projects"]
 cat_names = {"Daily": "Codzienne", "Weekly": "Cotygodniowe", "Monthly": "Comiesięczne", "Other": "Sezonowe", "Party": "Przed Imprezą", "Projects": "Projekty / Specjalne"}
 
@@ -214,24 +214,9 @@ for tab, cat in zip(tabs, categories):
         cat_df = df[df["cat"] == cat].copy() if not df.empty else pd.DataFrame()
         
         total_time = int(cat_df["time"].sum()) if not cat_df.empty else 0
-        
-        # Obliczanie czasu dla osób uwzględniając podział zadań "Razem" (50/50)
-        time_a = 0
-        time_b = 0
-        if not cat_df.empty and "owner" in cat_df.columns:
-            for _, row in cat_df.iterrows():
-                t_time = int(row["time"])
-                owner = row["owner"]
-                if owner == new_p_a:
-                    time_a += t_time
-                elif owner == new_p_b:
-                    time_b += t_time
-                elif owner == "Razem":
-                    time_a += t_time / 2
-                    time_b += t_time / 2
-        time_a, time_b = int(time_a), int(time_b)
-
-        done_time = int(cat_df[cat_df["done"] == True]["time"].sum()) if not cat_df.empty and "done" in cat_df.columns else 0
+        time_a = int(cat_df[cat_df["owner"] == new_p_a]["time"].sum()) if not cat_df.empty and "owner" in cat_df.columns else 0
+        time_b = int(cat_df[cat_df["owner"] == new_p_b]["time"].sum()) if not cat_df.empty and "owner" in cat_df.columns else 0
+        done_time = int(cat_df[(cat_df["cat"] == cat) & (cat_df["done"] == True)]["time"].sum()) if not cat_df.empty and "done" in cat_df.columns else 0
         
         actual_pct_a = round((time_a / total_time) * 100) if total_time > 0 else 0
         actual_pct_b = round((time_b / total_time) * 100) if total_time > 0 else 0
@@ -270,7 +255,7 @@ for tab, cat in zip(tabs, categories):
                     "room": st.column_config.TextColumn("Strefa", disabled=False),
                     "task": st.column_config.TextColumn("Zadanie", width="large", disabled=False),
                     "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=300, step=1, disabled=False),
-                    "owner": st.column_config.SelectboxColumn("Kto robi?", options=[new_p_a, new_p_b, "Razem"], required=True),
+                    "owner": st.column_config.SelectboxColumn("Kto robi?", options=[new_p_a, new_p_b], required=True),
                 },
                 hide_index=True,
                 use_container_width=True,
@@ -297,7 +282,6 @@ for tab, cat in zip(tabs, categories):
 
         st.divider()
         
-        # Sekcja usuwania zadań
         current_cat_tasks = [t for t in tasks if t["cat"] == cat]
         with st.expander("🗑️ Usuń zadanie z tej listy"):
             if current_cat_tasks:
@@ -315,13 +299,12 @@ for tab, cat in zip(tabs, categories):
             else:
                 st.info("Brak zadań do usunięcia na tej liście.")
 
-        # Sekcja dodawania nowego zadania
         with st.expander(f"➕ Dodaj nowe zadanie do: {cat_names[cat]}"):
             with st.form(key=f"add_form_{cat}"):
                 new_task_text = st.text_input("Nazwa zadania:")
                 new_task_room = st.selectbox("Pomieszczenie/Strefa:", ["Kuchnia", "Łazienka", "Sypialnia", "Gabinet", "Salon", "Przedpokój", "Balkon", "Całe 50m²"], key=f"room_{cat}")
                 new_task_time = st.number_input("Szacowany czas (min):", min_value=1, max_value=300, value=15)
-                new_task_owner = st.selectbox("Przypisane do:", [new_p_a, new_p_b, "Razem"], key=f"owner_{cat}")
+                new_task_owner = st.selectbox("Przypisane do:", [new_p_a, new_p_b], key=f"owner_{cat}")
                 
                 submitted = st.form_submit_button("Dodaj zadanie")
                 if submitted and new_task_text.strip():
