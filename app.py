@@ -68,7 +68,12 @@ DEFAULT_TASKS = [
     {"id": "p5", "cat": "Party", "room": "Przedpokój", "task": "Miejsce na wieszaku i stojaku na buty dla gości, konsola + świeczki, przetarcie luster", "time": 10, "default_role": "40%", "done": False},
     {"id": "p6", "cat": "Party", "room": "Balkon", "task": "Schowanie mopa i miednicy, przetarcie szklanego stolika i 2 krzeseł, poduszki, koc, wiewiórczy zakątek 🐿️", "time": 10, "default_role": "40%", "done": False},
     {"id": "p7", "cat": "Party", "room": "Gabinet", "task": "Ogarnięcie 2 biurek i złożonego stołu Kallhall, koce do kosza, zaścielenie łóżka 160x200", "time": 10, "default_role": "40%", "done": False},
-    {"id": "p8", "cat": "Party", "room": "Całe 50m²", "task": "Szybkie odkurzanie i odświeżenie podłóg parownicą (szczególnie strefa dzienna i łazienka)", "time": 25, "default_role": "60%", "done": False}
+    {"id": "p8", "cat": "Party", "room": "Całe 50m²", "task": "Szybkie odkurzanie i odświeżenie podłóg parownicą (szczególnie strefa dzienna i łazienka)", "time": 25, "default_role": "60%", "done": False},
+
+    # PROJECTS (Zadania specjalne / Projekty)
+    {"id": "pr1", "cat": "Projects", "room": "Sypialnia", "task": "Gruntowne sprzątanie szafy z ubraniami (selekcja, poukładanie)", "time": 90, "default_role": "60%", "done": False},
+    {"id": "pr2", "cat": "Projects", "room": "Gabinet", "task": "Organizacja regału Kallax i dokumentów w szafie", "time": 60, "default_role": "40%", "done": False},
+    {"id": "pr3", "cat": "Projects", "room": "Kuchnia", "task": "Mycie wszystkich szafek w zabudowie od środka", "time": 120, "default_role": "60%", "done": False}
 ]
 
 def load_state():
@@ -96,6 +101,8 @@ def load_state():
     for t in tasks:
         if "owner" not in t:
             t["owner"] = p_a if t.get("default_role") == "60%" else p_b
+        if "done" not in t:
+            t["done"] = False
 
     return {
         "person_a": p_a,
@@ -161,7 +168,7 @@ with st.sidebar:
     st.divider()
     st.header("🎲 Algorytmy")
     if st.button("🔀 Wylosuj podział pod wybrane %"):
-        for cat in ["Daily", "Weekly", "Monthly", "Other", "Party"]:
+        for cat in ["Daily", "Weekly", "Monthly", "Other", "Party", "Projects"]:
             cat_tasks = [t for t in tasks if t["cat"] == cat]
             if not cat_tasks:
                 continue
@@ -197,9 +204,9 @@ with st.sidebar:
         save_state(state)
         st.rerun()
 
-tabs = st.tabs(["⚡ Codzienne (Daily)", "📅 Cotygodniowe (Weekly)", "🗓️ Comiesięczne (Monthly)", "🧼 Sezonowe (Other)", "🎉 Przed Imprezą"])
-categories = ["Daily", "Weekly", "Monthly", "Other", "Party"]
-cat_names = {"Daily": "Codzienne", "Weekly": "Cotygodniowe", "Monthly": "Comiesięczne", "Other": "Sezonowe", "Party": "Przed Imprezą"}
+tabs = st.tabs(["⚡ Codzienne (Daily)", "📅 Cotygodniowe (Weekly)", "🗓️ Comiesięczne (Monthly)", "🧼 Sezonowe (Other)", "🎉 Przed Imprezą", "🛠️ Projekty / Specjalne"])
+categories = ["Daily", "Weekly", "Monthly", "Other", "Party", "Projects"]
+cat_names = {"Daily": "Codzienne", "Weekly": "Cotygodniowe", "Monthly": "Comiesięczne", "Other": "Sezonowe", "Party": "Przed Imprezą", "Projects": "Projekty / Specjalne"}
 
 for tab, cat in zip(tabs, categories):
     with tab:
@@ -247,7 +254,7 @@ for tab, cat in zip(tabs, categories):
                     "done": st.column_config.CheckboxColumn("Zrobione?", default=False),
                     "room": st.column_config.TextColumn("Strefa", disabled=False),
                     "task": st.column_config.TextColumn("Zadanie", width="large", disabled=False),
-                    "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=180, step=1, disabled=False),
+                    "time": st.column_config.NumberColumn("Czas (min)", min_value=1, max_value=300, step=1, disabled=False),
                     "owner": st.column_config.SelectboxColumn("Kto robi?", options=[new_p_a, new_p_b], required=True),
                 },
                 hide_index=True,
@@ -276,25 +283,34 @@ for tab, cat in zip(tabs, categories):
         st.divider()
         
         # Sekcja usuwania zadań
+        current_cat_tasks = [t for t in tasks if t["cat"] == cat]
         with st.expander("🗑️ Usuń zadanie z tej listy"):
-            to_delete = st.selectbox("Wybierz zadanie do skasowania:", [t["task"] for t in cat_tasks_now] if 'cat_tasks_now' in locals() and [t for t in tasks if t["cat"] == cat] else [], key=f"del_{cat}")
-            if st.button("Skasuj wybrane zadanie", key=f"btn_del_{cat}"):
-                tasks = [t for t in tasks if not (t["cat"] == cat and t["task"] == to_delete)]
-                state["tasks"] = tasks
-                save_state(state)
-                st.rerun()
+            if current_cat_tasks:
+                task_to_del = st.selectbox(
+                    "Wybierz zadanie do skasowania:", 
+                    options=[t["id"] for t in current_cat_tasks],
+                    format_func=lambda tid: next((t["task"] for t in current_cat_tasks if t["id"] == tid), tid),
+                    key=f"del_sel_{cat}"
+                )
+                if st.button("Skasuj wybrane zadanie", key=f"btn_del_{cat}"):
+                    tasks = [t for t in tasks if t["id"] != task_to_del]
+                    state["tasks"] = tasks
+                    save_state(state)
+                    st.rerun()
+            else:
+                st.info("Brak zadań do usunięcia na tej liście.")
 
         # Sekcja dodawania nowego zadania
         with st.expander(f"➕ Dodaj nowe zadanie do: {cat_names[cat]}"):
             with st.form(key=f"add_form_{cat}"):
                 new_task_text = st.text_input("Nazwa zadania:")
                 new_task_room = st.selectbox("Pomieszczenie/Strefa:", ["Kuchnia", "Łazienka", "Sypialnia", "Gabinet", "Salon", "Przedpokój", "Balkon", "Całe 50m²"], key=f"room_{cat}")
-                new_task_time = st.number_input("Szacowany czas (min):", min_value=1, max_value=180, value=15)
+                new_task_time = st.number_input("Szacowany czas (min):", min_value=1, max_value=300, value=15)
                 new_task_owner = st.selectbox("Przypisane do:", [new_p_a, new_p_b], key=f"owner_{cat}")
                 
                 submitted = st.form_submit_button("Dodaj zadanie")
                 if submitted and new_task_text.strip():
-                    new_id = f"custom_{random.randint(1000, 9999)}"
+                    new_id = f"custom_{cat}_{random.randint(10000, 99999)}"
                     new_item = {
                         "id": new_id,
                         "cat": cat,
